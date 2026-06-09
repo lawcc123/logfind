@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <glob.h>
+#include <unistd.h>
 #include "dbg.h"
 
 #define MAX_DATA 512
@@ -15,8 +16,8 @@ int or_search(FILE *cur_file, int keywordc, char *keyword[])
 		rewind(cur_file);
 
 		while (fgets(line, sizeof(line), cur_file)) {
-			if(strstr(line, keyword[i + 2])) {
-				printf("Found %s \n", keyword[i + 2]);
+			if(strstr(line, keyword[i])) {
+				printf("Found %s \n", keyword[i]);
 				printf("Now end the search...\n");
 				return 1;
 			}
@@ -40,8 +41,8 @@ int and_search(FILE *cur_file, int keywordc, char *keyword[])
 		rewind(cur_file);
 
 		while (fgets(line, sizeof(line), cur_file)) {
-			if(strstr(line, keyword[i + 1])) {
-			   printf("Found %s \n", keyword[i + 1]);
+			if(strstr(line, keyword[i])) {
+			   printf("Found %s \n", keyword[i]);
 			   found = 1;
 			   break;
 			}
@@ -49,7 +50,7 @@ int and_search(FILE *cur_file, int keywordc, char *keyword[])
 
 		if (!found) {
 		//If unable to find one keyword, no need to search other keyword.
-		printf("Cannot find %s \n", keyword[i + 1]);
+		printf("Cannot find %s \n", keyword[i]);
 		printf("Now end the search...\n");
 		return 0;
 	}
@@ -111,16 +112,28 @@ void read_logfind_line(FILE *file, int keywordc, char *keyword[], int or_option)
 int main(int argc, char *argv[])
 {
 	int or_option = 0;
-	//Check if argv[1] is "or search" option
-	if (argc > 1 && strcmp(argv[1], "-o") == 0) {
-		printf("Detect -o, will do or search \n");
-		or_option = 1;
-		argc -= 2;
-	} else { argc -= 1; }
+	int opt;
 
-	check(argc >= 1, "You should at least type one keyword");
+	while ((opt = getopt(argc, argv, "o")) != -1) {
+		switch (opt) {
+			case 'o':
+				or_option = 1;
+				break;
+			default:
+				fprintf(stderr, "Usage: %s [-o] keyword...\n", argv[0]);
+				return 1;
+		}
+	}
+	
+	//optind return the index of first non-option argument
+	int keywordc = argc - optind;
+	check(keywordc >= 1, "You should at least type one keyword");
+
+	char **keywords = argv + optind;
 
 	char *home = getenv("HOME"); //returns "/home/yourusername"
+	check(home != NULL, "HOME environment variable not found.");
+
 	char path[MAX_DATA];	
 	snprintf(path, sizeof(path), "%s/.logfind", home);
 		
@@ -129,7 +142,7 @@ int main(int argc, char *argv[])
 	FILE *logfind = fopen(path, "r");
 	check(logfind != NULL, "Failed to load ~/.logfind\n");
 	
-	read_logfind_line(logfind, argc, argv, or_option);
+	read_logfind_line(logfind, keywordc, keywords, or_option);
 
 	fclose(logfind);
 
