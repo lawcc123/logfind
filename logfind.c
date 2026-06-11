@@ -11,12 +11,17 @@ int or_search(FILE *cur_file, int keywordc, char *keyword[])
 	char line[1024];
 
 	for (int i = 0; i < keywordc; i++) {
-		
+	
+		int line_num = 0;	
 		rewind(cur_file);
 
 		while (fgets(line, sizeof(line), cur_file)) {
+			
+			line_num++;
+
 			if(strstr(line, keyword[i])) {
 				printf("Found %s \n", keyword[i]);
+				printf("line %d: %s", line_num, line);
 				printf("Now end the search...\n");
 				return 1;
 			}
@@ -37,11 +42,16 @@ int and_search(FILE *cur_file, int keywordc, char *keyword[])
 	for (int i = 0; i < keywordc; i++) {
 		int found = 0;
 
+		int line_num = 0;
 		rewind(cur_file);
 
 		while (fgets(line, sizeof(line), cur_file)) {
+			
+			line_num++;
+
 			if(strstr(line, keyword[i])) {
 			   printf("Found %s \n", keyword[i]);
+			   printf("line %d: %s", line_num, line);
 			   found = 1;
 			   break;
 			}
