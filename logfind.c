@@ -3,13 +3,12 @@
 #include <string.h>
 #include <glob.h>
 #include <unistd.h>
+#include <limits.h>
 #include "dbg.h"
-
-#define MAX_DATA 512
 
 int or_search(FILE *cur_file, int keywordc, char *keyword[])
 {
-	char line[MAX_DATA];
+	char line[1024];
 
 	for (int i = 0; i < keywordc; i++) {
 		
@@ -32,7 +31,7 @@ int or_search(FILE *cur_file, int keywordc, char *keyword[])
 
 int and_search(FILE *cur_file, int keywordc, char *keyword[])
 {
-	char line[MAX_DATA];
+	char line[1024];
 
 	//"and search"(Default)
 	for (int i = 0; i < keywordc; i++) {
@@ -66,14 +65,15 @@ int open_file(char *file_path, int keywordc, char *keyword[], int or_option)
 	cur_file = fopen(file_path, "r");
 	check(cur_file != NULL, "Fail to open the file.");	
 
-	//fread(file_content, sizeof(char), MAX_DATA, cur_file);
+	//fread(file_content, sizeof(char), PATH_MAX, cur_file);
 	//printf("%s \n", file_content);	
 
 	//Determine if it is an "or search" or "and search"	
-	
 	if (or_option) {
 		or_search(cur_file, keywordc, keyword);
-	} else { and_search(cur_file, keywordc, keyword); }
+	} else { 
+		and_search(cur_file, keywordc, keyword);
+	}
 
 	printf("Now closing the file:%s \n", file_path);
 	fclose(cur_file);
@@ -85,7 +85,7 @@ error:
 
 void read_logfind_line(FILE *file, int keywordc, char *keyword[], int or_option)
 {
-	char line[MAX_DATA];
+	char line[PATH_MAX];
 	while (fgets(line, sizeof(line), file) != NULL) {
 
 		// Remove the newline character
@@ -102,7 +102,7 @@ void read_logfind_line(FILE *file, int keywordc, char *keyword[], int or_option)
 		} else if (rc == GLOB_NOMATCH) {
 			printf("No files matched pattern: %s\n", line);
 		} else {
-			printf("Error reading pattern: %s\n", line);
+			fprintf(stderr, "Error reading pattern: %s\n", line);
 		}
 
 		globfree(&results);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	char *home = getenv("HOME"); //returns "/home/yourusername"
 	check(home != NULL, "HOME environment variable not found.");
 
-	char path[MAX_DATA];	
+	char path[PATH_MAX];	
 	snprintf(path, sizeof(path), "%s/.logfind", home);
 		
 	printf("Your ~/.logfind path is %s \n", path);
